@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>电子元器件管理系统</title>
+    <style>
+        /* 基础样式 */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        /* 表单容器 */
+        .form-container {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        /* 输入组样式 */
+        .input-group {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        input, select, button {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        /* 表格样式 */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .data-table th {
+            background-color: #f8f9fa;
+        }
+
+        .quantity-input {
+            width: 60px;
+            padding: 5px;
+            text-align: center;
+        }
+
+        .edit-btn {
+            background-color: #2196F3;
+            margin: 0 5px;
+        }
+
+        .delete-btn {
+            background-color: #f44336;
+        }
+        .category-delete-btn {
+        background-color: #ff6666;
+        padding: 5px 10px;
+        font-size: 12px;
+    }
+    </style>
+</head>
+<body>
+    <!-- 种类管理 -->
+    <div class="form-container">
+        <h2>种类管理</h2>
+        <div class="input-group">
+            <input type="text" id="categoryName" placeholder="输入新种类名称">
+            <button onclick="addCategory()">添加种类</button>
+        </div>
+        
+        <!-- 新增种类列表 -->
+        <table class="data-table" style="margin-top: 15px;">
+            <thead>
+                <tr>
+                    <th>已有种类</th>
+                    <th style="width: 100px;">操作</th>
+                </tr>
+            </thead>
+            <tbody id="categoryList"></tbody>
+        </table>
+    </div>
+
+    <!-- 元器件管理 -->
+    <div class="form-container">
+        <h2>添加元器件</h2>
+        <div class="input-group">
+            <select id="componentCategory">
+                <option value="">选择种类</option>
+            </select>
+            <input type="text" id="componentName" placeholder="元器件名称">
+            <input type="text" id="componentDesc" placeholder="型号/规格">
+            <input type="number" id="componentQty" placeholder="数量" min="0">
+            <button onclick="addComponent()">添加</button>
+        </div>
+    </div>
+
+    <!-- 数据展示 -->
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>种类</th>
+                <th>元器件名称</th>
+                <th>型号/规格</th>
+                <th>数量</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody id="dataBody"></tbody>
+    </table>
+
+<script>
+// 初始化存储
+if (!localStorage.getItem('categories')) {
+    localStorage.setItem('categories', JSON.stringify([]));
+}
+if (!localStorage.getItem('components')) {
+    localStorage.setItem('components', JSON.stringify([]));
+}
+
+// 加载数据
+window.onload = function() {
+    loadCategories();
+    loadComponents();
+};
+
+// 种类管理功能
+function loadCategories() {
+    const categories = JSON.parse(localStorage.getItem('categories'));
+    const select = document.getElementById('componentCategory');
+    const categoryList = document.getElementById('categoryList');
+    
+    // 清空并更新下拉菜单
+    select.innerHTML = '<option value="">选择种类</option>';
+    categoryList.innerHTML = '';
+    
+    categories.forEach((category, index) => {
+        // 更新下拉菜单
+        const option = document.createElement('option');
+        option.value = category.name;
+        option.textContent = category.name;
+        select.appendChild(option);
+
+        // 更新种类列表
+        const row = categoryList.insertRow();
+        row.innerHTML = `
+            <td>${category.name}</td>
+            <td>
+                <button class="categhttp://127.0.0.1:5500/hello.htmlhttp://127.0.0.1:5500/hello.htmlhttp://127.0.0.1:5500/hello.htmlhttp://127.0.0.1:5500/hello.htmlhttp://127.0.0.1:5500/hello.htmlory-delete-btn" 
+                        onclick="deleteCategory(${index})">删除</button>
+            </td>
+        `;
+    });
+}
+function deleteCategory(index) {
+    const categories = JSON.parse(localStorage.getItem('categories'));
+    const deletedCategory = categories[index].name;
+    
+    if (confirm(`确定要删除种类 "${deletedCategory}" 吗？这将删除所有相关元器件！`)) {
+        // 删除种类
+        categories.splice(index, 1);
+        localStorage.setItem('categories', JSON.stringify(categories));
+        
+        // 删除关联元器件
+        const components = JSON.parse(localStorage.getItem('components'));
+        const filteredComponents = components.filter(c => c.category !== deletedCategory);
+        localStorage.setItem('components', JSON.stringify(filteredComponents));
+        
+        // 刷新界面
+        loadCategories();
+        loadComponents();
+    }
+}
+function addCategory() {
+    const name = document.getElementById('categoryName').value.trim();
+    if (!name) return;
+
+    const categories = JSON.parse(localStorage.getItem('categories'));
+    if (!categories.some(c => c.name === name)) {        categories.push({ name });
+        localStorage.setItem('categories', JSON.stringify(categories));
+        loadCategories();
+        document.getElementById('categoryName').value = '';
+    }
+}
+
+// 元器件管理功能
+function loadComponents() {
+    const components = JSON.parse(localStorage.getItem('components'));
+    const tbody = document.getElementById('dataBody');
+    tbody.innerHTML = '';
+
+    components.forEach((component, index) => {
+        const row = tbody.insertRow();
+        row.innerHTML = `
+            <td>${component.category}</td>
+            <td>${component.name}</td>
+            <td>${component.desc}</td>
+            <td>
+                <input type="number" 
+                       class="quantity-input" 
+                       value="${component.quantity}" 
+                       onchange="updateQuantity(${index}, this.value)">
+            </td>
+            <td>
+                <button class="edit-btn" onclick="editComponent(${index})">编辑</button>
+                <button class="delete-btn" onclick="deleteComponent(${index})">删除</button>
+            </td>
+        `;
+    });
+}
+
+function addComponent() {
+    const category = document.getElementById('componentCategory').value;
+    const name = document.getElementById('componentName').value.trim();
+    const desc = document.getElementById('componentDesc').value.trim();
+    const quantity = document.getElementById('componentQty').value;
+
+    if (!category || !name || !quantity) return;
+
+    const components = JSON.parse(localStorage.getItem('components'));
+    components.push({
+        category: category,
+        name: name,
+        desc: desc,
+        quantity: quantity
+    });
+    localStorage.setItem('components', JSON.stringify(components));
+
+    loadComponents();
+    // 清空输入框
+    document.getElementById('componentName').value = '';
+    document.getElementById('componentDesc').value = '';
+    document.getElementById('componentQty').value = '';
+}
+
+function updateQuantity(index, newValue) {
+    const components = JSON.parse(localStorage.getItem('components'));
+    if (newValue >= 0) {
+        components[index].quantity = parseInt(newValue);
+        localStorage.setItem('components', JSON.stringify(components));
+    }
+}
+
+function deleteComponent(index) {
+    const components = JSON.parse(localStorage.getItem('components'));
+    components.splice(index, 1);
+    localStorage.setItem('components', JSON.stringify(components));
+    loadComponents();
+}
+
+function editComponent(index) {
+    const components = JSON.parse(localStorage.getItem('components'));
+    const component = components[index];
+    
+    // 弹窗编辑
+    const newName = prompt('修改名称', component.name);
+    const newDesc = prompt('修改描述', component.desc);
+    
+    if (newName !== null) component.name = newName.trim();
+    if (newDesc !== null) component.desc = newDesc.trim();
+    
+    localStorage.setItem('components', JSON.stringify(components));
+    loadComponents();
+}
+</script>
+</body>
+</html>
